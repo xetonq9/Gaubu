@@ -1,0 +1,84 @@
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Nhập và Tìm kiếm Dữ liệu</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    input, textarea, button { margin: 5px 0; padding: 8px; width: 100%; }
+    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    tr.highlight td { background-color: yellow; }
+  </style>
+</head>
+<body>
+  <h2>Nhập dữ liệu vào Google Sheet</h2>
+  <input id="loai_xe" placeholder="Loại xe">
+  <input id="bien_so" placeholder="Biển số xe">
+  <input id="ho_va_ten" placeholder="Họ và tên">
+  <input id="nam_sinh" placeholder="Năm sinh">
+  <input id="dia_chi" placeholder="Địa chỉ">
+  <input id="hanh_vi" placeholder="Hành vi">
+  <input id="noi_dung_khac" placeholder="Nội dung khác">
+  <input id="ngay_nhap" placeholder="Ngày nhập (dd/mm/yyyy)">
+  <button onclick="submitData()">+ Gửi dữ liệu</button>
+
+  <h3>Tìm kiếm trong danh sách</h3>
+  <input id="searchBox" placeholder="Nhập từ khóa để lọc..." oninput="searchTable()">
+  <table id="dataTable"><thead></thead><tbody></tbody></table>
+
+<script>
+const sheetUrl = "https://script.google.com/macros/s/AKfycbyayvra-AfSHm5umHIbgM4sIjPVj7BsvkV9F3vHEtVZuyfNEuDmIgVdBV2nPSB5OTux/exec";
+
+function submitData() {
+  const data = {
+    loai_xe: document.getElementById("loai_xe").value,
+    bien_so: document.getElementById("bien_so").value,
+    ho_va_ten: document.getElementById("ho_va_ten").value,
+    nam_sinh: document.getElementById("nam_sinh").value,
+    dia_chi: document.getElementById("dia_chi").value,
+    hanh_vi: document.getElementById("hanh_vi").value,
+    noi_dung_khac: document.getElementById("noi_dung_khac").value,
+    ngay_nhap: document.getElementById("ngay_nhap").value
+  };
+
+  fetch(sheetUrl, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  }).then(() => alert("Đã gửi dữ liệu"))
+    .catch(() => alert("Gửi thất bại"));
+}
+
+function strip(str) {
+  return str.toLowerCase().normalize("NFD").replace(/[̀-ͯ\s\.\-]/g, "");
+}
+
+function searchTable() {
+  const keyword = strip(document.getElementById("searchBox").value);
+  const rows = document.querySelectorAll("#dataTable tbody tr");
+  rows.forEach(row => {
+    let matched = false;
+    row.querySelectorAll("td").forEach(cell => {
+      const clean = strip(cell.textContent);
+      if (clean.includes(keyword)) matched = true;
+    });
+    row.style.display = matched ? "" : "none";
+    row.classList.toggle("highlight", matched && keyword);
+  });
+}
+
+fetch(sheetUrl)
+  .then(res => res.json())
+  .then(({ data }) => {
+    if (!data || !data.length) return;
+    const table = document.getElementById("dataTable");
+    const [headers, ...rows] = data;
+    table.querySelector("thead").innerHTML = "<tr>" + headers.map(h => `<th>${h}</th>`).join("") + "</tr>";
+    table.querySelector("tbody").innerHTML = rows.slice(0, 50).map(r => "<tr>" + r.map(c => `<td>${c}</td>`).join("") + "</tr>").join("");
+  });
+</script>
+</body>
+</html>

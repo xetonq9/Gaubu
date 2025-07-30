@@ -1,0 +1,157 @@
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Nhập và Tìm kiếm Dữ liệu Vi phạm</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 30px;
+      background-color: #f9f9f9;
+    }
+    h2 {
+      color: #333;
+    }
+    form {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px #ccc;
+      margin-bottom: 30px;
+    }
+    input[type="text"], input[type="number"], textarea {
+      width: 100%;
+      padding: 8px 10px;
+      margin: 8px 0;
+      box-sizing: border-box;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      background-color: green;
+      color: white;
+      font-weight: bold;
+      font-size: 16px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: darkgreen;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid #ccc;
+    }
+    th {
+      background-color: #eee;
+    }
+    .highlight {
+      background-color: yellow;
+    }
+    #searchInput {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      margin-bottom: 15px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+  </style>
+</head>
+<body>
+  <h2>📝 Nhập dữ liệu vào Google Sheet</h2>
+  <form id="dataForm">
+    <input type="text" name="LOAI_XE" placeholder="Loại xe">
+    <input type="text" name="BIEN_SO_XE" placeholder="Biển số xe">
+    <input type="text" name="HO_VA_TEN" placeholder="Họ và tên">
+    <input type="number" name="NAM_SINH" placeholder="Năm sinh">
+    <input type="text" name="DIA_CHI" placeholder="Địa chỉ">
+    <input type="text" name="HANH_VI" placeholder="Hành vi">
+    <textarea name="NOI_DUNG_KHAC" placeholder="Nội dung khác"></textarea>
+    <input type="text" name="NGAY_NHAP" placeholder="Ngày nhập (dd/mm/yyyy)">
+    <button type="submit">➕ Gửi dữ liệu</button>
+  </form>
+
+  <h2>🔍 Tìm kiếm trong danh sách</h2>
+  <input type="text" id="searchInput" placeholder="Nhập từ khóa để lọc...">
+  <table id="dataTable">
+    <thead></thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    const sheetURL = 'https://script.google.com/macros/s/AKfycbyayvra-AfSHm5umHIbgM4sIjPVj7BsvkV9F3vHEtVZuyfNEuDmIgVdBV2nPSB5OTux/exec';
+
+    document.getElementById("dataForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+      const formData = new FormData(this);
+      fetch(sheetURL, {
+        method: "POST",
+        body: formData
+      }).then(response => alert("Đã gửi dữ liệu")).catch(error => alert("Lỗi: " + error));
+      this.reset();
+    });
+
+    function simplify(text) {
+      return text.toLowerCase().normalize("NFD").replace(/[̀-ͯ\s\.\-]/g, "");
+    }
+
+    function highlight(val, keyword) {
+      const simpKeyword = simplify(keyword);
+      const simpVal = simplify(val);
+      if (simpKeyword && simpVal.includes(simpKeyword)) {
+        return '<span class="highlight">' + val + '</span>';
+      }
+      return val;
+    }
+
+    function renderTable(data, keyword) {
+      const table = document.getElementById("dataTable");
+      const head = table.querySelector("thead");
+      const body = table.querySelector("tbody");
+      head.innerHTML = '';
+      body.innerHTML = '';
+      if (data.length === 0) return;
+
+      const headers = Object.keys(data[0]);
+      head.innerHTML = '<tr>' + headers.map(h => `<th>${h}</th>`).join('') + '</tr>';
+      let shown = 0;
+      for (const row of data) {
+        if (shown >= 50) break;
+        const values = headers.map(h => row[h] || "");
+        const matched = values.some(v => simplify(v).includes(simplify(keyword)));
+        if (!keyword || matched) {
+          const htmlRow = '<tr>' + values.map(v => `<td>${highlight(v, keyword)}</td>`).join('') + '</tr>';
+          body.innerHTML += htmlRow;
+          shown++;
+        }
+      }
+    }
+
+    async function fetchData(keyword = "") {
+      try {
+        const res = await fetch(sheetURL);
+        const json = await res.json();
+        renderTable(json.data, keyword);
+      } catch (e) {
+        console.error("Fetch error:", e);
+      }
+    }
+
+    document.getElementById("searchInput").addEventListener("input", function() {
+      fetchData(this.value);
+    });
+
+    fetchData();
+  </script>
+</body>
+</html>

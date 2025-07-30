@@ -1,0 +1,95 @@
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Nhập và Tìm kiếm Dữ liệu</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    input, textarea, button { margin: 5px 0; padding: 8px; width: 100%; }
+    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    tr.highlight td { background-color: yellow; }
+    .success { color: green; }
+    .error { color: red; }
+  </style>
+</head>
+<body>
+  <h2>Nhập dữ liệu vào Google Sheet</h2>
+  <form id="data-form">
+    <input name="loai_xe" placeholder="Loại xe" required>
+    <input name="bien_so" placeholder="Biển số xe" required>
+    <input name="ho_va_ten" placeholder="Họ và tên">
+    <input name="nam_sinh" placeholder="Năm sinh">
+    <input name="dia_chi" placeholder="Địa chỉ">
+    <input name="hanh_vi" placeholder="Hành vi">
+    <input name="noi_dung_khac" placeholder="Nội dung khác">
+    <input name="ngay_nhap" placeholder="Ngày nhập (dd/mm/yyyy)">
+    <button type="submit">+ Gửi dữ liệu</button>
+  </form>
+  <div id="responseMsg"></div>
+
+  <h3>Tìm kiếm trong danh sách</h3>
+  <input id="searchBox" placeholder="Nhập từ khóa để lọc..." oninput="searchTable()">
+  <table id="dataTable"><thead></thead><tbody></tbody></table>
+
+<script>
+const scriptURL = "https://script.google.com/macros/s/AKfycbyayvra-AfSHm5umHIbgM4sIjPVj7BsvkV9F3vHEtVZuyfNEuDmIgVdBV2nPSB5OTux/exec";
+const form = document.getElementById("data-form");
+const responseMsg = document.getElementById("responseMsg");
+
+form.addEventListener("submit", e => {
+  e.preventDefault();
+  const formData = new FormData(form);
+
+  fetch(scriptURL, {
+    method: "POST",
+    body: formData
+  })
+  .then(res => res.text())
+  .then(response => {
+    responseMsg.innerHTML = "<p class='success'>✅ Gửi thành công!</p>";
+    form.reset();
+    setTimeout(loadSheetData, 1000); // cập nhật lại bảng
+  })
+  .catch(error => {
+    console.error("Error!", error.message);
+    responseMsg.innerHTML = "<p class='error'>❌ Gửi thất bại.</p>";
+  });
+});
+
+function strip(str) {
+  return str.toLowerCase().normalize("NFD").replace(/[̀-ͯ\s\.\-]/g, "");
+}
+
+function searchTable() {
+  const keyword = strip(document.getElementById("searchBox").value);
+  const rows = document.querySelectorAll("#dataTable tbody tr");
+  rows.forEach(row => {
+    let matched = false;
+    row.querySelectorAll("td").forEach(cell => {
+      const clean = strip(cell.textContent);
+      if (clean.includes(keyword)) matched = true;
+    });
+    row.style.display = matched ? "" : "none";
+    row.classList.toggle("highlight", matched && keyword);
+  });
+}
+
+function loadSheetData() {
+  fetch(scriptURL)
+    .then(res => res.json())
+    .then(({ data }) => {
+      if (!data || !data.length) return;
+      const table = document.getElementById("dataTable");
+      const [headers, ...rows] = data;
+      table.querySelector("thead").innerHTML = "<tr>" + headers.map(h => `<th>${h}</th>`).join("") + "</tr>";
+      table.querySelector("tbody").innerHTML = rows.slice(0, 50).map(r => "<tr>" + r.map(c => `<td>${c}</td>`).join("") + "</tr>").join("");
+    });
+}
+
+// tải dữ liệu ban đầu
+loadSheetData();
+</script>
+</body>
+</html>

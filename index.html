@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Nhập dữ liệu vào Google Sheet</title>
+  <style>
+    body { font-family: Arial; max-width: 600px; margin: 20px auto; padding: 20px; border: 1px solid #ccc; border-radius: 10px; }
+    input, textarea, button { display: block; width: 100%; margin-top: 10px; padding: 10px; font-size: 16px; }
+    button { background-color: green; color: white; border: none; cursor: pointer; }
+    button:hover { background-color: darkgreen; }
+  </style>
+</head>
+<body>
+  <h2>Nhập dữ liệu vào Google Sheet</h2>
+  <form id="dataForm">
+    <input type="text" name="loai_xe" placeholder="Loại xe">
+    <input type="text" name="bien_so" placeholder="Biển số xe">
+    <input type="text" name="ho_va_ten" placeholder="Họ và tên">
+    <input type="text" name="nam_sinh" placeholder="Năm sinh">
+    <input type="text" name="dia_chi" placeholder="Địa chỉ">
+    <input type="text" name="hanh_vi" placeholder="Hành vi">
+    <textarea name="noi_dung_khac" placeholder="Nội dung khác"></textarea>
+    <input type="text" name="ngay_nhap" placeholder="Ngày nhập (dd/mm/yyyy)">
+    <button type="submit">+ Gửi dữ liệu</button>
+  </form>
+
+  <script>
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbyayvra-AfSHm5umHIbgM4sIjPVj7BsvkV9F3vHEtVZuyfNEuDmIgVdBV2nPSB5OTux/exec';
+
+    document.getElementById('dataForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const formData = new FormData(this);
+      fetch(scriptURL, { method: 'POST', body: formData })
+        .then(response => alert("✅ Gửi dữ liệu thành công!"))
+        .catch(error => alert("❌ Lỗi gửi: " + error.message));
+    });
+  </script>
+</body>
+</html>

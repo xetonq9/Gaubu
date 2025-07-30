@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -6,90 +5,134 @@
   <title>Nhập và Tìm kiếm Dữ liệu</title>
   <style>
     body { font-family: Arial, sans-serif; padding: 20px; }
-    input, textarea, button { margin: 5px 0; padding: 8px; width: 100%; }
-    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
-    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-    tr.highlight td { background-color: yellow; }
-    .success { color: green; }
-    .error { color: red; }
+    .tab { display: none; }
+    .tab.active { display: block; }
+    button.tab-button {
+      margin-right: 10px;
+      padding: 8px 16px;
+      cursor: pointer;
+    }
+    input, textarea {
+      display: block;
+      width: 100%;
+      margin-bottom: 10px;
+      padding: 8px;
+      font-size: 16px;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 6px;
+      text-align: left;
+    }
+    tr.highlight td {
+      background-color: yellow;
+    }
   </style>
 </head>
 <body>
-  <h2>Nhập dữ liệu vào Google Sheet</h2>
-  <form id="data-form">
-    <input name="loai_xe" placeholder="Loại xe" required>
-    <input name="bien_so" placeholder="Biển số xe" required>
-    <input name="ho_va_ten" placeholder="Họ và tên">
-    <input name="nam_sinh" placeholder="Năm sinh">
-    <input name="dia_chi" placeholder="Địa chỉ">
-    <input name="hanh_vi" placeholder="Hành vi">
-    <input name="noi_dung_khac" placeholder="Nội dung khác">
-    <input name="ngay_nhap" placeholder="Ngày nhập (dd/mm/yyyy)">
-    <button type="submit">+ Gửi dữ liệu</button>
-  </form>
-  <div id="responseMsg"></div>
 
-  <h3>Tìm kiếm trong danh sách</h3>
-  <input id="searchBox" placeholder="Nhập từ khóa để lọc..." oninput="searchTable()">
-  <table id="dataTable"><thead></thead><tbody></tbody></table>
+  <h1>Nhập và Tìm kiếm Dữ liệu</h1>
 
-<script>
-const scriptURL = "https://script.google.com/macros/s/AKfycbyayvra-AfSHm5umHIbgM4sIjPVj7BsvkV9F3vHEtVZuyfNEuDmIgVdBV2nPSB5OTux/exec";
-const form = document.getElementById("data-form");
-const responseMsg = document.getElementById("responseMsg");
+  <div>
+    <button class="tab-button" onclick="showTab('formTab')">📥 Nhập Dữ liệu</button>
+    <button class="tab-button" onclick="showTab('searchTab')">🔍 Tìm kiếm</button>
+  </div>
 
-form.addEventListener("submit", e => {
-  e.preventDefault();
-  const formData = new FormData(form);
+  <!-- Tab Nhập Dữ liệu -->
+  <div id="formTab" class="tab active">
+    <h2>Nhập Dữ liệu</h2>
+    <form id="dataForm">
+      <input type="text" name="Họ tên" placeholder="Họ tên" required />
+      <input type="text" name="SĐT" placeholder="Số điện thoại" required />
+      <textarea name="Ghi chú" placeholder="Ghi chú thêm"></textarea>
+      <button type="submit">Gửi dữ liệu</button>
+    </form>
+    <div id="formStatus"></div>
+  </div>
 
-  fetch(scriptURL, {
-    method: "POST",
-    body: formData
-  })
-  .then(res => res.text())
-  .then(response => {
-    responseMsg.innerHTML = "<p class='success'>✅ Gửi thành công!</p>";
-    form.reset();
-    setTimeout(loadSheetData, 1000); // cập nhật lại bảng
-  })
-  .catch(error => {
-    console.error("Error!", error.message);
-    responseMsg.innerHTML = "<p class='error'>❌ Gửi thất bại.</p>";
-  });
-});
+  <!-- Tab Tìm kiếm -->
+  <div id="searchTab" class="tab">
+    <h2>Tìm kiếm Dữ liệu</h2>
+    <input type="text" id="searchInput" placeholder="Nhập từ khóa để tìm...">
+    <table id="dataTable">
+      <thead>
+        <tr>
+          <th>Họ tên</th>
+          <th>SĐT</th>
+          <th>Ghi chú</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
 
-function strip(str) {
-  return str.toLowerCase().normalize("NFD").replace(/[̀-ͯ\s\.\-]/g, "");
-}
+  <script>
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbyayvra-AfSHm5umHIbgM4sIjPVj7BsvkV9F3vHEtVZuyfNEuDmIgVdBV2nPSB5OTux/exec';
 
-function searchTable() {
-  const keyword = strip(document.getElementById("searchBox").value);
-  const rows = document.querySelectorAll("#dataTable tbody tr");
-  rows.forEach(row => {
-    let matched = false;
-    row.querySelectorAll("td").forEach(cell => {
-      const clean = strip(cell.textContent);
-      if (clean.includes(keyword)) matched = true;
+    function showTab(tabId) {
+      document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+    }
+
+    // Gửi dữ liệu
+    document.getElementById('dataForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const form = e.target;
+      const formData = new FormData(form);
+
+      fetch(scriptURL, {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => {
+        document.getElementById('formStatus').innerText = "✅ Đã gửi thành công!";
+        form.reset();
+        loadData(); // reload dữ liệu tìm kiếm
+      })
+      .catch(error => {
+        document.getElementById('formStatus').innerText = "❌ Gửi thất bại!";
+        console.error('Error!', error.message);
+      });
     });
-    row.style.display = matched ? "" : "none";
-    row.classList.toggle("highlight", matched && keyword);
-  });
-}
 
-function loadSheetData() {
-  fetch(scriptURL)
-    .then(res => res.json())
-    .then(({ data }) => {
-      if (!data || !data.length) return;
-      const table = document.getElementById("dataTable");
-      const [headers, ...rows] = data;
-      table.querySelector("thead").innerHTML = "<tr>" + headers.map(h => `<th>${h}</th>`).join("") + "</tr>";
-      table.querySelector("tbody").innerHTML = rows.slice(0, 50).map(r => "<tr>" + r.map(c => `<td>${c}</td>`).join("") + "</tr>").join("");
+    // Tìm kiếm và hiển thị
+    function loadData() {
+      fetch(scriptURL)
+        .then(res => res.json())
+        .then(data => {
+          const tbody = document.querySelector('#dataTable tbody');
+          tbody.innerHTML = '';
+          data.forEach(row => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td>${row['Họ tên'] || ''}</td>
+              <td>${row['SĐT'] || ''}</td>
+              <td>${row['Ghi chú'] || ''}</td>
+            `;
+            tbody.appendChild(tr);
+          });
+        });
+    }
+
+    // Lọc tìm kiếm
+    document.getElementById('searchInput').addEventListener('input', function() {
+      const keyword = this.value.toLowerCase();
+      const rows = document.querySelectorAll('#dataTable tbody tr');
+      rows.forEach(row => {
+        const text = row.innerText.toLowerCase();
+        row.classList.toggle('highlight', keyword && text.includes(keyword));
+        row.style.display = keyword && !text.includes(keyword) ? 'none' : '';
+      });
     });
-}
 
-// tải dữ liệu ban đầu
-loadSheetData();
-</script>
+    // Tải dữ liệu lần đầu
+    loadData();
+  </script>
+
 </body>
 </html>
